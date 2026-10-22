@@ -3,6 +3,7 @@ const { createProxyMiddleware } = require('http-proxy-middleware');
 const cors = require('cors');
 
 const app = express();
+app.set('trust proxy', 1);
 app.use(cors());
 // KHONG dung express.json() o gateway - se an body POST truoc khi proxy forward
 
