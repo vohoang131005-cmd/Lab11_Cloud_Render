@@ -1,11 +1,11 @@
 const express = require('express');
-const { createProxyMiddleware } = require('http-proxy-middleware');
+const { createProxyMiddleware, fixRequestBody } = require('http-proxy-middleware');
 const cors = require('cors');
 
 const app = express();
 app.set('trust proxy', 1);
 app.use(cors());
-// KHONG dung express.json() o gateway - se an body POST truoc khi proxy forward
+// KHONG dung express.json() o gateway
 
 const USER_SERVICE_URL = process.env.USER_SERVICE_URL || 'http://localhost:3001';
 const PRODUCT_SERVICE_URL = process.env.PRODUCT_SERVICE_URL || 'http://localhost:3002';
@@ -25,8 +25,10 @@ app.get('/health', (req, res) => {
 const proxy = (ctx, target) => createProxyMiddleware(ctx, {
   target,
   changeOrigin: true,
+  secure: false,
   timeout: 30000,
   proxyTimeout: 30000,
+  onProxyReq: fixRequestBody,
   onError: (err, req, res) => {
     console.error(`Proxy error ${req.method} ${req.url} -> ${target}:`, err.message);
     if (!res.headersSent) {
@@ -47,4 +49,8 @@ app.get('/', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, '0.0.0.0', () => console.log(`API Gateway on ${PORT}`));
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(`API Gateway on ${PORT}`);
+});
+server.keepAliveTimeout = 65000;
+server.headersTimeout = 66000;
